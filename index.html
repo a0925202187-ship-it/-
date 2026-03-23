@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二手書掃描與上架系統</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: '微軟正黑體', sans-serif; padding: 20px; max-width: 600px; margin: auto; text-align: center; }
+        .search-box { margin-bottom: 20px; background: #f0f8ff; padding: 15px; border-radius: 8px; }
+        input { padding: 10px; font-size: 16px; width: 60%; margin-top: 10px; }
+        button { padding: 10px 15px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; }
+        .btn-scan { background-color: #4CAF50; color: white; margin-bottom: 15px; width: 80%; font-size: 18px; }
+        .btn-search { background-color: #008CBA; color: white; }
+        
+        #reader { width: 100%; max-width: 400px; margin: 0 auto; display: none; }
+        #result { display: none; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fff; text-align: left; margin-top: 20px;}
+        img { max-width: 150px; margin-top: 10px; border-radius: 4px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+    <h2>📚 二手書掃描與上架系統</h2>
+
+    <div id="reader"></div>
+    
+    <div class="search-box">
+        <button class="btn-scan" onclick="startScanner()">📷 開啟相機掃描條碼</button>
+        <br>
+        <label>或手動輸入 ISBN：</label><br>
+        <input type="text" id="isbn-input" placeholder="例如: 9780545010221">
+        <button class="btn-search" onclick="searchBook()">🔍 找書</button>
+    </div>
+
+    <div id="result">
+        <h3 id="book-title">書名</h3>
+        <p id="book-author">作者</p>
+        <img id="book-cover" src="" alt="書籍封面">
+    </div>
+
+    <script>
+        let html5QrcodeScanner;
+
+        function startScanner() {
+            
+            document.getElementById('reader').style.display = 'block'; 
+            
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", { fps: 10, qrbox: {width: 250, height: 100} }, false);
+            
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            html5QrcodeScanner.clear();
+            document.getElementById('reader').style.display = 'none';
+            
+            document.getElementById('isbn-input').value = decodedText;
+            
+            searchBook();
+        }
+
+        function onScanFailure(error) {
+        }
+
+        async function searchBook() {
+            const isbn = document.getElementById('isbn-input').value;
+            if (!isbn) return alert('請先輸入 ISBN！');
+
+            document.getElementById('book-title').innerText = '🔍 正在去圖書館翻找資料...';
+            document.getElementById('result').style.display = 'block';
+
+            try {
+                const response = await fetch(`http://localhost:3000/search/${isbn}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('book-title').innerText = '書名：' + data.title;
+                    document.getElementById('book-author').innerText = '作者：' + data.author;
+                    document.getElementById('book-cover').src = data.cover || ''; 
+                } else {
+                    document.getElementById('book-title').innerText = '❌ 找不到這本書';
+                    document.getElementById('book-author').innerText = '';
+                    document.getElementById('book-cover').src = '';
+                }
+            } catch (error) {
+                alert('連線失敗，請確定伺服器有在運作！');
+            }
+        }
+    </script>
+
+</body>
+</html>
