@@ -1,0 +1,138 @@
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from itsdangerous import URLSafeTimedSerializer  # 新增：用來產生安全的時效性 Token
+
+app = Flask(__name__)
+
+# ================= 配置區 =================
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SECRET_KEY'] = 'your_secret_key'  # 這個密鑰很重要，Token 也是用它來加密
+app.json.ensure_ascii = False
+
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
+
+# 建立一個 Token 產生器
+serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+
+# ================= 資料表設計 =================
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(60), nullable=False)
+
+
+with app.app_context():
+    db.create_all()
+
+
+# ================= API 路由區 =================
+
+# 1. 註冊功能 API (維持原樣)
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'GET':
+        username = request.args.get('u', 'default_user')
+        email = request.args.get('e', 'default@test.com')
+        password = request.args.get('p', '123456')
+        data = {"username": username, "email": email, "password": password}
+    else:
+        data = request.get_json()
+
+    existing_user = User.query.filter((User.username == data['username']) | (User.email == data['email'])).first()
+    if existing_user:
+        return jsonify({"message": "註冊失敗：帳號或 Email 已被註冊過！", "status": "error"}), 400
+
+    hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+    new_user = User(username=data['username'], email=data['email'], password=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({"message": f"恭喜 {data['username']}，註冊成功！", "status": "success"}), 201
+
+
+# 2. 登入功能 API (維持原樣)
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        username = request.args.get('u', '')
+        password = request.args.get('p', '')
+    else:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+
+    user = User.query.filter_by(username=username).first()
+
+    if user and bcrypt.check_password_hash(user.password, password):
+        return jsonify({"message": f"歡迎回來，{user.username}！登入成功。", "status": "success"}), 200
+    else:
+        return jsonify({"message": "登入失敗：帳號或密碼錯誤！", "status": "error"}), 401
+
+
+# ================= 新增：忘記密碼區塊 =================
+
+# 3. 申請忘記密碼 API (發送重設 Token)
+@app.route('/forgot_password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'GET':
+        email = request.args.get('e', '')
+    else:
+        data = request.get_json()
+        email = data.get('email')
+
+    # 確認這個 Email 有沒有註冊過
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "找不到此 Email 的帳號！", "status": "error"}), 404
+
+    # 產生安全 Token，並加上一個標籤 'password-reset-salt'
+    token = serializer.dumps(user.email, salt='password-reset-salt')
+
+    # 模擬寄發 Email (真實開發中會用 Flask-Mail 套件把這段網址寄出去)
+    reset_url = f"http://127.0.0.1:5000/reset_password/{token}"
+    print("\n" + "="*40)
+    print(f"💌 系統模擬寄信給: {user.email}")
+    print(f"🔗 請點擊以下連結重設密碼 (有效時間1小時):")
+    print(reset_url)
+    print("="*40 + "\n")
+
+    return jsonify({"message": "密碼重設連結已發送，請檢查您的 Email (模擬測試請看終端機)！", "status": "success"}), 200
+
+
+# 4. 實際重設密碼 API
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    # 第一步：驗證 Token 是否合法且未過期 (設定 max_age=3600 代表 1 小時內有效)
+    try:
+        email = serializer.loads(token, salt='password-reset-salt', max_age=3600)
+    except:
+        return jsonify({"message": "重設連結無效或已過期！請重新申請。", "status": "error"}), 400
+
+    # 第二步：獲取新密碼並更新
+    if request.method == 'GET':
+        new_password = request.args.get('np', '')
+    else:
+        data = request.get_json()
+        new_password = data.get('new_password')
+
+    if not new_password:
+        return jsonify({"message": "請提供新密碼！", "status": "error"}), 400
+
+    # 找到使用者並更新密碼
+    user = User.query.filter_by(email=email).first()
+    if user:
+        hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+        user.password = hashed_password
+        db.session.commit()
+        return jsonify({"message": "密碼重設成功！請使用新密碼登入。", "status": "success"}), 200
+    
+    return jsonify({"message": "發生未知錯誤，找不到使用者。", "status": "error"}), 500
+
+
+# ================= 啟動伺服器 =================
+if __name__ == '__main__':
+    app.run(debug=True)
