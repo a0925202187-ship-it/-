@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white"
+    android:padding="24dp"
+    android:gravity="center_horizontal">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginTop="60dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📖"
+            android:textSize="32sp"
+            android:layout_marginEnd="8dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="二手書交易"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="@color/colorTextDark"/>
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="歡迎回來，請登入"
+        android:textSize="16sp"
+        android:textColor="#888888"
+        android:layout_marginTop="8dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_edittext_rounded"
+        android:gravity="center_vertical"
+        android:layout_marginTop="60dp"
+        android:padding="4dp">
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_myplaces"
+            android:layout_marginStart="12dp"
+            android:contentDescription="User Icon"/>
+        <EditText
+            android:id="@+id/etUsername"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="請輸入帳號"
+            android:background="@android:color/transparent"
+            android:textSize="16sp"
+            android:padding="12dp"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/bg_edittext_rounded"
+        android:gravity="center_vertical"
+        android:layout_marginTop="16dp"
+        android:padding="4dp">
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_lock_lock"
+            android:layout_marginStart="12dp"
+            android:contentDescription="Pass Icon"/>
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="請輸入密碼"
+            android:inputType="textPassword"
+            android:background="@android:color/transparent"
+            android:textSize="16sp"
+            android:padding="12dp"/>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:text="登入"
+        android:background="@drawable/bg_button_rounded"
+        android:textColor="@color/white"
+        android:textAllCaps="false"
+        android:layout_marginTop="40dp"/>
+
+    <TextView
+        android:id="@+id/btnGoToRegister"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="沒有帳號？點此註冊"
+        android:textColor="@color/colorPrimary"
+        android:layout_marginTop="24dp"
+        android:padding="8dp"/>
+
+</LinearLayout>
