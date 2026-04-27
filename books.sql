@@ -3,6 +3,8 @@ CREATE TABLE books (
   user_id INT(11) NOT NULL,
 
   title VARCHAR(100) NOT NULL,
+  author VARCHAR(100),
+  publisher VARCHAR(100),
   isbn VARCHAR(30),
   category VARCHAR(50),
   price DECIMAL(10,2),
